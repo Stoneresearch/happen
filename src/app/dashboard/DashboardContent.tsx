@@ -1,399 +1,424 @@
-// src/app/dashboard/DashboardContent.tsx
+'use client'
 
-import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
-import { CalendarIcon, MapPinIcon, PlaneIcon, Hotel, Car, Users, FileText, ClipboardList, Mail, List, MessageCircle, Send, DollarSign, Bot, X } from 'lucide-react';
-import { UserButton } from "@clerk/nextjs";
+import React, { useState } from 'react'
+import {
+    Airplay, Bell, ChevronLeft, ChevronRight, ClipboardList,
+    FileText, LayoutDashboard, Menu, Settings, Truck, Upload, Users, File
+} from 'lucide-react'
+import { UserButton } from "@clerk/nextjs"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from "@/components/ui/tabs"
 
-// Simulated WebSocket connection
-const mockWebSocket = {
-    send: (message: string) => {
-        console.log('Sent message:', message);
-    },
-    onmessage: null as ((event: { data: string }) => void) | null,
-};
+export default function Dashboard() {
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+    const [activeTab, setActiveTab] = useState('overview')
 
-type Message = {
-    id: string;
-    sender: string;
-    content: string;
-    timestamp: Date;
-};
+    const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed)
 
-type BudgetItem = {
-    id: string;
-    category: string;
-    amount: number;
-    spent: number;
-};
-
-type AIChatMessage = {
-    id: string;
-    role: 'user' | 'ai';
-    content: string;
-};
-
-export default function DashboardContent() {
-    const [activeTab, setActiveTab] = useState('overview');
-    const [emailSubject, setEmailSubject] = useState('');
-    const [emailBody, setEmailBody] = useState('');
-    const [guestName, setGuestName] = useState('');
-    const [guestEmail, setGuestEmail] = useState('');
-    const [chatMessage, setChatMessage] = useState('');
-    const [chatMessages, setChatMessages] = useState<Message[]>([]);
-    const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([
-        { id: '1', category: 'Artist Fees', amount: 50000, spent: 30000 },
-        { id: '2', category: 'Venue Rental', amount: 20000, spent: 20000 },
-        { id: '3', category: 'Marketing', amount: 15000, spent: 10000 },
-        { id: '4', category: 'Production', amount: 25000, spent: 15000 },
-    ]);
-    const [isAIChatOpen, setIsAIChatOpen] = useState(false);
-    const [aiChatMessages, setAIChatMessages] = useState<AIChatMessage[]>([
-        { id: '1', role: 'ai', content: "Hello! I'm your AI assistant. How can I help you today?" }
-    ]);
-    const [aiChatInput, setAIChatInput] = useState('');
-    const chatEndRef = useRef<HTMLDivElement>(null);
-    const aiChatEndRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        // Simulated WebSocket connection setup
-        mockWebSocket.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            setChatMessages((prevMessages) => [...prevMessages, message]);
-        };
-
-        // Cleanup function
-        return () => {
-            mockWebSocket.onmessage = null;
-        };
-    }, []);
-
-    useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [chatMessages]);
-
-    useEffect(() => {
-        aiChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [aiChatMessages]);
-
-    const handleSendEmail = () => {
-        console.log('Sending email:', { subject: emailSubject, body: emailBody });
-        setEmailSubject('');
-        setEmailBody('');
-    };
-
-    const handleAddGuest = () => {
-        console.log('Adding guest to guestlist:', { name: guestName, email: guestEmail });
-        setGuestName('');
-        setGuestEmail('');
-    };
-
-    const handleSendChatMessage = () => {
-        if (chatMessage.trim()) {
-            const newMessage: Message = {
-                id: Date.now().toString(),
-                sender: 'User',
-                content: chatMessage,
-                timestamp: new Date(),
-            };
-            setChatMessages((prevMessages) => [...prevMessages, newMessage]);
-            mockWebSocket.send(JSON.stringify(newMessage));
-            setChatMessage('');
-        }
-    };
-
-    const getTotalBudget = () => budgetItems.reduce((total, item) => total + item.amount, 0);
-    const getTotalSpent = () => budgetItems.reduce((total, item) => total + item.spent, 0);
-
-    const handleSendAIChatMessage = async () => {
-        if (aiChatInput.trim()) {
-            const userMessage: AIChatMessage = {
-                id: Date.now().toString(),
-                role: 'user',
-                content: aiChatInput,
-            };
-            setAIChatMessages((prevMessages) => [...prevMessages, userMessage]);
-            setAIChatInput('');
-
-            // Simulated AI response (replace this with actual LLM integration)
-            setTimeout(() => {
-                const aiResponse: AIChatMessage = {
-                    id: (Date.now() + 1).toString(),
-                    role: 'ai',
-                    content: `I understand you said: "${aiChatInput}". How can I assist you further?`,
-                };
-                setAIChatMessages((prevMessages) => [...prevMessages, aiResponse]);
-            }, 1000);
-        }
-    };
+    const sidebarItems = [
+        { icon: <LayoutDashboard size={20} />, label: 'Dashboard', value: 'overview' },
+        { icon: <Truck size={20} />, label: 'Logistics', value: 'logistics' },
+        { icon: <File size={20} />, label: 'File Uploads', value: 'file-uploads' },
+        { icon: <ClipboardList size={20} />, label: 'Tasks', value: 'tasks' },
+        { icon: <Settings size={20} />, label: 'Settings', value: 'settings' },
+    ]
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjFmMWYxIi8+PHBhdGggZD0iTTAgMGg0MHY0MEgwVjB6IiBmaWxsPSIjMDAwIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz48L3N2Zz4=')]">
-            <header className="bg-white border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-                    <h1 className="text-2xl font-bold text-gray-900">Happen Ninja Dashboard</h1>
+        <div className="flex h-screen bg-gray-100">
+            {/* Sidebar */}
+            <div className={`bg-white border-r transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'} hidden md:block`}>
+                <div className="p-4 flex items-center justify-between">
+                    {!sidebarCollapsed && <h1 className="text-2xl font-bold text-purple-600">Happen Ninja</h1>}
+                    <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+                        {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                    </Button>
+                </div>
+                <nav className="mt-4">
+                    {sidebarItems.map((item, index) => (
+                        <a
+                            key={index}
+                            href="#"
+                            className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${activeTab === item.value ? 'bg-gray-200' : ''}`}
+                            onClick={() => setActiveTab(item.value)}
+                        >
+                            <div className={`${sidebarCollapsed ? 'mx-auto' : ''}`}>
+                                {item.icon}
+                            </div>
+                            {!sidebarCollapsed && <span className="ml-3">{item.label}</span>}
+                        </a>
+                    ))}
+                </nav>
+            </div>
+
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Top Bar */}
+                <header className="flex items-center justify-between p-4 bg-white border-b">
+                    <div className="flex items-center">
+                        <Button variant="ghost" size="icon" className="md:hidden mr-2">
+                            <Menu className="h-4 w-4" />
+                        </Button>
+                        <Select>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Select Event" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="event1">Summer Music Festival</SelectItem>
+                                <SelectItem value="event2">Tech Conference 2023</SelectItem>
+                                <SelectItem value="event3">Art Exhibition</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                     <div className="flex items-center space-x-4">
-                        <Button variant="outline" className="border-black text-black hover:bg-gray-100">
-                            Notifications
+                        <Input type="text" placeholder="Search..." className="w-full max-w-xs hidden md:block" />
+                        <Button variant="outline" size="icon">
+                            <Bell className="h-4 w-4" />
                         </Button>
                         <UserButton afterSignOutUrl="/" />
                     </div>
-                </div>
-            </header>
+                </header>
 
-            <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-                    <TabsList className="bg-white border border-gray-200 p-1 rounded-lg">
-                        <TabsTrigger value="overview" className="rounded-md text-sm">Overview</TabsTrigger>
-                        <TabsTrigger value="logistics" className="rounded-md text-sm">Logistics</TabsTrigger>
-                        <TabsTrigger value="requests" className="rounded-md text-sm">Requests</TabsTrigger>
-                        <TabsTrigger value="riders" className="rounded-md text-sm">Riders</TabsTrigger>
-                        <TabsTrigger value="tasks" className="rounded-md text-sm">Tasks</TabsTrigger>
-                        <TabsTrigger value="workflow" className="rounded-md text-sm">Workflow</TabsTrigger>
-                        <TabsTrigger value="emails" className="rounded-md text-sm">Emails</TabsTrigger>
-                        <TabsTrigger value="guestlist" className="rounded-md text-sm">Guestlist</TabsTrigger>
-                        <TabsTrigger value="chat" className="rounded-md text-sm">Chat</TabsTrigger>
-                        <TabsTrigger value="budget" className="rounded-md text-sm">Budget</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="overview" className="space-y-6">
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                            <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Total Artists</CardTitle>
-                                    <Users className="h-4 w-4 text-gray-500" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">24</div>
-                                    <p className="text-xs text-gray-500">+2 from last month</p>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
-                                    <CalendarIcon className="h-4 w-4 text-gray-500" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">6</div>
-                                    <p className="text-xs text-gray-500">Next event in 3 days</p>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
-                                    <ClipboardList className="h-4 w-4 text-gray-500" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">12</div>
-                                    <p className="text-xs text-gray-500">4 urgent requests</p>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Active Tasks</CardTitle>
-                                    <FileText className="h-4 w-4 text-gray-500" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">18</div>
-                                    <p className="text-xs text-gray-500">7 due today</p>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-                            <Card className="col-span-4 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                {/* Dashboard Content */}
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4 md:p-6">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+                        <TabsList className="flex flex-wrap">
+                            <TabsTrigger value="overview">Overview</TabsTrigger>
+                            <TabsTrigger value="logistics">Logistics</TabsTrigger>
+                            <TabsTrigger value="file-uploads">File Uploads</TabsTrigger>
+                            <TabsTrigger value="tasks">Tasks</TabsTrigger>
+                            <TabsTrigger value="settings">Settings</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="overview" className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Total Artists</CardTitle>
+                                        <Users className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">2</div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Pending Files</CardTitle>
+                                        <FileText className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">3</div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Upcoming Flights</CardTitle>
+                                        <Airplay className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">2</div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">Open Tasks</CardTitle>
+                                        <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">3</div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Logistics Summary</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="overflow-x-auto">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Artist</TableHead>
+                                                        <TableHead>Travel</TableHead>
+                                                        <TableHead>Accommodation</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    <TableRow>
+                                                        <TableCell>The Rockers</TableCell>
+                                                        <TableCell>AA1234 - Jul 14</TableCell>
+                                                        <TableCell>Sunset Hotel</TableCell>
+                                                    </TableRow>
+                                                    <TableRow>
+                                                        <TableCell>DJ Awesome</TableCell>
+                                                        <TableCell>UA5678 - Jul 15</TableCell>
+                                                        <TableCell>Beachside Resort</TableCell>
+                                                    </TableRow>
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Recent Tasks</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="overflow-x-auto">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Task</TableHead>
+                                                        <TableHead>Created By</TableHead>
+                                                        <TableHead>Status</TableHead>
+                                                        <TableHead>Due Date</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    <TableRow>
+                                                        <TableCell>Confirm stage setup</TableCell>
+                                                        <TableCell>Paris</TableCell>
+                                                        <TableCell>
+                                                            <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+                                                                In Progress
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell>Jul 13, 2023</TableCell>
+                                                    </TableRow>
+                                                    <TableRow>
+                                                        <TableCell>Arrange equipment delivery</TableCell>
+                                                        <TableCell>Macca</TableCell>
+                                                        <TableCell>
+                                                            <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                                                                Completed
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell>Jul 14, 2023</TableCell>
+                                                    </TableRow>
+                                                    <TableRow>
+                                                        <TableCell>Finalize rehearsal schedule</TableCell>
+                                                        <TableCell>Luisa</TableCell>
+                                                        <TableCell>
+                                                            <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
+                                                                Overdue
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell>Jul 15, 2023</TableCell>
+                                                    </TableRow>
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="logistics" className="space-y-4">
+                            <Card>
                                 <CardHeader>
-                                    <CardTitle>Upcoming Events Timeline</CardTitle>
+                                    <CardTitle>Logistics Overview</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="space-y-4">
-                                        <div className="flex items-center space-x-4">
-                                            <CalendarIcon className="h-6 w-6 text-gray-500" />
-                                            <div>
-                                                <h3 className="font-semibold">Summer Music Festival</h3>
-                                                <p className="text-sm text-gray-500">July 15-17, 2023</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center space-x-4">
-                                            <CalendarIcon className="h-6 w-6 text-gray-500" />
-                                            <div>
-                                                <h3 className="font-semibold">City Park Concert Series</h3>
-                                                <p className="text-sm text-gray-500">Every Saturday, August 2023</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center space-x-4">
-                                            <CalendarIcon className="h-6 w-6 text-gray-500" />
-                                            <div>
-                                                <h3 className="font-semibold">Fall Arts Showcase</h3>
-                                                <p className="text-sm text-gray-500">September 22-24, 2023</p>
-                                            </div>
-                                        </div>
+                                    <div className="overflow-x-auto">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Artist</TableHead>
+                                                    <TableHead>Travel</TableHead>
+                                                    <TableHead>Accommodation</TableHead>
+                                                    <TableHead>Transportation</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                <TableRow>
+                                                    <TableCell>The Rockers</TableCell>
+                                                    <TableCell>
+                                                        <div>Flight: AA1234</div>
+                                                        <div>From: JFK to LAX</div>
+                                                        <div>Date: Jul 14, 2023</div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div>Sunset Hotel</div>
+                                                        <div>Room: 301-303</div>
+                                                        <div>Check-in: Jul 14, 2023</div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div>SUV from airport</div>
+                                                        <div>Driver: John Doe</div>
+                                                        <div>Contact: +1234567890</div>
+                                                    </TableCell>
+                                                </TableRow>
+                                                <TableRow>
+                                                    <TableCell>DJ Awesome</TableCell>
+                                                    <TableCell>
+                                                        <div>Flight: UA5678</div>
+                                                        <div>From: LHR to LAX</div>
+                                                        <div>Date: Jul 15, 2023</div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div>Beachside Resort</div>
+                                                        <div>Room: Suite 42</div>
+                                                        <div>Check-in: Jul 15, 2023</div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div>Limo service</div>
+                                                        <div>Company: LuxeDrive</div>
+                                                        <div>Booking Ref: LD78901</div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            </TableBody>
+                                        </Table>
                                     </div>
                                 </CardContent>
                             </Card>
-                            <Card className="col-span-3 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                        </TabsContent>
+                        <TabsContent value="file-uploads" className="space-y-4">
+                            <Card>
                                 <CardHeader>
-                                    <CardTitle>Recent Activities</CardTitle>
+                                    <CardTitle>File Uploads</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="space-y-4">
-                                        <div className="flex items-center space-x-4">
-                                            <Users className="h-6 w-6 text-gray-500" />
-                                            <div>
-                                                <h3 className="font-semibold">New artist onboarded</h3>
-                                                <p className="text-sm text-gray-500">Jane Doe added to roster</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center space-x-4">
-                                            <FileText className="h-6 w-6 text-gray-500" />
-                                            <div>
-                                                <h3 className="font-semibold">Contract signed</h3>
-                                                <p className="text-sm text-gray-500">Summer Music Festival agreement completed</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center space-x-4">
-                                            <Mail className="h-6 w-6 text-gray-500" />
-                                            <div>
-                                                <h3 className="font-semibold">Bulk email sent</h3>
-                                                <p className="text-sm text-gray-500">Event details sent to all artists</p>
-                                            </div>
-                                        </div>
+                                    <div className="overflow-x-auto">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>File Name</TableHead>
+                                                    <TableHead>Uploaded By</TableHead>
+                                                    <TableHead>Date</TableHead>
+                                                    <TableHead>Size</TableHead>
+                                                    <TableHead>Actions</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                <TableRow>
+                                                    <TableCell>stage_plan.pdf</TableCell>
+                                                    <TableCell>John Doe</TableCell>
+                                                    <TableCell>Jul 10, 2023</TableCell>
+                                                    <TableCell>2.4 MB</TableCell>
+                                                    <TableCell>
+                                                        <Button variant="outline" size="sm">View</Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                                <TableRow>
+                                                    <TableCell>equipment_list.xlsx</TableCell>
+                                                    <TableCell>Jane Smith</TableCell>
+                                                    <TableCell>Jul 11, 2023</TableCell>
+                                                    <TableCell>1.8 MB</TableCell>
+                                                    <TableCell>
+                                                        <Button variant="outline" size="sm">View</Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                                <TableRow>
+                                                    <TableCell>contract.docx</TableCell>
+                                                    <TableCell>Mike Johnson</TableCell>
+                                                    <TableCell>Jul 12, 2023</TableCell>
+                                                    <TableCell>523 KB</TableCell>
+                                                    <TableCell>
+                                                        <Button variant="outline" size="sm">View</Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            </TableBody>
+                                        </Table>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="logistics" className="space-y-6">
-                        <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                            <CardHeader>
-                                <CardTitle>Logistics Management</CardTitle>
-                                <CardDescription>Track flights, accommodations, and transportation</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    <div className="flex items-center space-x-4">
-                                        <PlaneIcon className="h-6 w-6 text-gray-500" />
-                                        <div>
-                                            <h3 className="font-semibold">Flight Tracking</h3>
-                                            <p className="text-sm text-gray-500">3 upcoming flights</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center space-x-4">
-                                        <Hotel className="h-6 w-6 text-gray-500" />
-                                        <div>
-                                            <h3 className="font-semibold">Accommodations</h3>
-                                            <p className="text-sm text-gray-500">5 hotel bookings</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center space-x-4">
-                                        <Car className="h-6 w-6 text-gray-500" />
-                                        <div>
-                                            <h3 className="font-semibold">Transportation</h3>
-                                            <p className="text-sm text-gray-500">2 shuttle routes active</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    <TabsContent value="emails" className="space-y-6">
-                        <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                            <CardHeader>
-                                <CardTitle>Automated Emails</CardTitle>
-                                <CardDescription>Send automated emails to artists, vendors, and team members</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <form onSubmit={(e) => { e.preventDefault(); handleSendEmail(); }} className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="email-subject">Email Subject</Label>
-                                        <Input
-                                            id="email-subject"
-                                            placeholder="Enter email subject"
-                                            value={emailSubject}
-                                            onChange={(e) => setEmailSubject(e.target.value)}
-                                            className="border-gray-300 focus:border-black focus:ring-black"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="email-body">Email Body</Label>
-                                        <Textarea
-                                            id="email-body"
-                                            placeholder="Enter email body"
-                                            value={emailBody}
-                                            onChange={(e) => setEmailBody(e.target.value)}
-                                            className="border-gray-300 focus:border-black focus:ring-black"
-                                        />
-                                    </div>
-                                    <Button type="submit" variant="outline" className="border-black text-black hover:bg-gray-100">
-                                        Send Email
-                                    </Button>
-                                </form>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    {/* Add other TabsContent sections here (requests, riders, tasks, workflow, guestlist, chat, budget) */}
-
-                </Tabs>
-            </main>
-
-            {/* AI Chat Agent */}
-            <div className={`fixed bottom-4 right-4 transition-all duration-300 ${isAIChatOpen ? 'w-96 h-[500px]' : 'w-16 h-16'}`}>
-                <Card className="w-full h-full flex flex-col bg-white border border-gray-200 shadow-lg">
-                    <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-gray-200">
-                        <CardTitle className={`${isAIChatOpen ? 'block' : 'hidden'}`}>AI Assistant</CardTitle>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="rounded-full border-black text-black hover:bg-gray-100"
-                            onClick={() => setIsAIChatOpen(!isAIChatOpen)}
-                        >
-                            {isAIChatOpen ? <X className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
-                        </Button>
-                    </CardHeader>
-                    {isAIChatOpen && (
-                        <>
-                            <CardContent className="flex-grow overflow-auto p-4">
-                                <ScrollArea className="h-full w-full pr-4">
-                                    {aiChatMessages.map((message) => (
-                                        <div key={message.id} className={`mb-4 ${message.role === 'ai' ? 'text-gray-800' : 'text-gray-600'}`}>
-                                            <div className="font-semibold">{message.role === 'ai' ? 'AI' : 'You'}</div>
-                                            <div className="text-sm">{message.content}</div>
-                                        </div>
-                                    ))}
-                                    <div ref={aiChatEndRef} />
-                                </ScrollArea>
-                            </CardContent>
-                            <CardFooter className="p-4 border-t border-gray-200">
-                                <form onSubmit={(e) => { e.preventDefault(); handleSendAIChatMessage(); }} className="w-full">
-                                    <div className="flex space-x-2">
-                                        <Input
-                                            placeholder="Ask me anything..."
-                                            value={aiChatInput}
-                                            onChange={(e) => setAIChatInput(e.target.value)}
-                                            className="border-gray-300 focus:border-black focus:ring-black"
-                                        />
-                                        <Button type="submit" variant="outline" className="border-black text-black hover:bg-gray-100">
-                                            <Send className="h-4 w-4" />
-                                            <span className="sr-only">Send</span>
+                                    <div className="mt-4">
+                                        <Button>
+                                            <Upload className="h-4 w-4 mr-2" />
+                                            Upload New File
                                         </Button>
                                     </div>
-                                </form>
-                            </CardFooter>
-                        </>
-                    )}
-                </Card>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="tasks" className="space-y-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Task and Schedule Coordination</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="overflow-x-auto">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Task</TableHead>
+                                                    <TableHead>Assigned To</TableHead>
+                                                    <TableHead>Created By</TableHead>
+                                                    <TableHead>Due Date</TableHead>
+                                                    <TableHead>Status</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                <TableRow>
+                                                    <TableCell>Confirm stage setup for The Rockers</TableCell>
+                                                    <TableCell>John Doe</TableCell>
+                                                    <TableCell>Paris</TableCell>
+                                                    <TableCell>Jul 13, 2023</TableCell>
+                                                    <TableCell>
+                                                        <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+                                                            In Progress
+                                                        </span>
+                                                    </TableCell>
+                                                </TableRow>
+                                                <TableRow>
+                                                    <TableCell>Arrange DJ Awesome's equipment delivery</TableCell>
+                                                    <TableCell>Jane Smith</TableCell>
+                                                    <TableCell>Macca</TableCell>
+                                                    <TableCell>Jul 14, 2023</TableCell>
+                                                    <TableCell>
+                                                        <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                                                            Completed
+                                                        </span>
+                                                    </TableCell>
+                                                </TableRow>
+                                                <TableRow>
+                                                    <TableCell>Finalize The Rockers' rehearsal schedule</TableCell>
+                                                    <TableCell>Mike Johnson</TableCell>
+                                                    <TableCell>Luisa</TableCell>
+                                                    <TableCell>Jul 15, 2023</TableCell>
+                                                    <TableCell>
+                                                        <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
+                                                            Overdue
+                                                        </span>
+                                                    </TableCell>
+                                                </TableRow>
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="settings" className="space-y-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Settings</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p>Einstellungen-Inhalt hier einfügen</p>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
+                </main>
             </div>
         </div>
-    );
+    )
 }
